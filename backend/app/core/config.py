@@ -31,7 +31,7 @@ class Settings(BaseSettings):
         alias="OPENROUTER_FREE_MODELS",
     )
     embeddings_provider: Literal["local"] = Field(default="local", alias="EMBEDDINGS_PROVIDER")
-    embedding_model: str = Field(default="all-MiniLM-L6-v2", alias="EMBEDDING_MODEL")
+    embedding_model: str = Field(default="BAAI/bge-small-en-v1.5", alias="EMBEDDING_MODEL")
 
     vector_db_path: str = Field(default="./data/chroma", alias="VECTOR_DB_PATH")
     upload_dir: str = Field(default="./data/uploads", alias="UPLOAD_DIR")

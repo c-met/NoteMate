@@ -9,7 +9,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -58,7 +58,7 @@ class RagEngine:
     def _build_embeddings(self):
         self._refresh_settings_from_env()
         if self.settings.embeddings_provider == "local":
-            return HuggingFaceEmbeddings(model_name=self.settings.embedding_model)
+            return FastEmbedEmbeddings(model_name="BAAI/bge-small-en-v1.5")
         raise ValueError("Invalid EMBEDDINGS_PROVIDER. Only 'local' is supported.")
 
     def _build_llm(self):
