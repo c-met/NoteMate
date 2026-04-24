@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic-settings
+langchain
+langchain-google-genai
+langchain-openai
+langchain-community
+chromadb
+langchain-chroma
+sentence-transformers
+pypdf
+tenacity
+httpx
+orjson
+pytest
