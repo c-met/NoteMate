@@ -11,6 +11,7 @@ export async function uploadPdfs(files: File[], onUploadProgress?: (pct: number)
   files.forEach((f) => formData.append("files", f));
   const { data } = await api.post<DocumentItem[]>("/upload", formData, {
     headers: { "Content-Type": "multipart/form-data" },
+    timeout: 600000, // 10 min — model download + embedding on first run
     onUploadProgress: (evt) => {
       if (!evt.total || !onUploadProgress) return;
       onUploadProgress(Math.round((evt.loaded * 100) / evt.total));
