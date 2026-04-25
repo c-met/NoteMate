@@ -205,15 +205,13 @@ class RagEngine:
             raise ValueError("The uploaded PDF has no readable text content.")
         
         chunks = self._chunk_pages(pages, document_id, display_name)
-        
-        # Batch upload to avoid Gemini rate limits (15 RPM free tier)
+
         import time
-        batch_size = 90
-        for i in range(0, len(chunks), batch_size):
-            batch = chunks[i : i + batch_size]
-            self._add_batch_with_retry(batch)
-            if i + batch_size < len(chunks):
-                time.sleep(5)  # 5 second delay between batches
+        # Gemini free tier: 100 embed requests/min.
+        # Embed 1 chunk per 0.75 s  →  ~80 req/min — permanently safe.
+        for chunk in chunks:
+            self._add_batch_with_retry([chunk])
+            time.sleep(0.75)
                 
         indexed = IndexedDocument(id=document_id, filename=display_name, size_bytes=path.stat().st_size)
         self.documents[document_id] = indexed

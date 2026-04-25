@@ -36,8 +36,8 @@ class Settings(BaseSettings):
     vector_db_path: str = Field(default="./data/chroma", alias="VECTOR_DB_PATH")
     upload_dir: str = Field(default="./data/uploads", alias="UPLOAD_DIR")
     clear_on_reload: bool = Field(default=True, alias="CLEAR_ON_RELOAD")
-    chunk_size: int = 1000
-    chunk_overlap: int = 200
+    chunk_size: int = 2000
+    chunk_overlap: int = 100
     retrieval_k: int = 2
     max_context_chars: int = 6000
     max_history_chars: int = 900
