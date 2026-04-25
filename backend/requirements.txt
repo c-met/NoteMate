@@ -3,6 +3,7 @@ uvicorn[standard]
 python-multipart
 pydantic-settings
 langchain
+langchain-text-splitters
 langchain-google-genai
 langchain-openai
 langchain-community
@@ -12,3 +13,4 @@ pypdf
 tenacity
 httpx
 orjson
+fastembed

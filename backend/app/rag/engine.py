@@ -13,7 +13,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import RetryError, Retrying, stop_after_attempt, wait_exponential
 
 from app.core.config import Settings, get_settings
 from app.rag.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
@@ -57,7 +57,13 @@ class RagEngine:
     def _build_embeddings(self):
         self._refresh_settings_from_env()
         if self.settings.embeddings_provider == "local":
-            from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
+            try:
+                from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
+            except ImportError as exc:
+                raise ImportError(
+                    "fastembed is not installed. Add 'fastembed' to requirements.txt "
+                    "and redeploy."
+                ) from exc
             return FastEmbedEmbeddings(
                 model_name=self.settings.embedding_model,
                 threads=1,
@@ -179,9 +185,15 @@ class RagEngine:
         """
         return re.sub(r"^[0-9a-fA-F-]{36}_", "", filename).strip() or "Unknown.pdf"
 
-    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=4, max=60))
     def _add_batch_with_retry(self, batch: list[Document]) -> None:
-        self.vectorstore.add_documents(batch)
+        """Synchronous retry-safe batch insert (safe to call from asyncio.to_thread)."""
+        for attempt in Retrying(
+            stop=stop_after_attempt(5),
+            wait=wait_exponential(multiplier=2, min=4, max=60),
+            reraise=True,
+        ):
+            with attempt:
+                self.vectorstore.add_documents(batch)
 
     def index_pdf(self, file_path: str, original_filename: str | None = None) -> IndexedDocument:
         self._ensure_clients()
