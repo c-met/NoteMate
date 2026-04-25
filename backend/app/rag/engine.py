@@ -13,7 +13,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
-from tenacity import retry, stop_after_attempt, wait_fixed
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from app.core.config import Settings, get_settings
 from app.rag.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
@@ -179,7 +179,10 @@ class RagEngine:
         """
         return re.sub(r"^[0-9a-fA-F-]{36}_", "", filename).strip() or "Unknown.pdf"
 
-    @retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=4, max=60))
+    def _add_batch_with_retry(self, batch: list[Document]) -> None:
+        self.vectorstore.add_documents(batch)
+
     def index_pdf(self, file_path: str, original_filename: str | None = None) -> IndexedDocument:
         self._ensure_clients()
         path = Path(file_path)
@@ -193,12 +196,12 @@ class RagEngine:
         
         # Batch upload to avoid Gemini rate limits (15 RPM free tier)
         import time
-        batch_size = 30
+        batch_size = 90
         for i in range(0, len(chunks), batch_size):
             batch = chunks[i : i + batch_size]
-            self.vectorstore.add_documents(batch)
+            self._add_batch_with_retry(batch)
             if i + batch_size < len(chunks):
-                time.sleep(2)  # 2 second delay between batches
+                time.sleep(5)  # 5 second delay between batches
                 
         indexed = IndexedDocument(id=document_id, filename=display_name, size_bytes=path.stat().st_size)
         self.documents[document_id] = indexed
