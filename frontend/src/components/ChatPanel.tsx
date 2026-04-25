@@ -528,6 +528,7 @@ export function ChatPanel({ messages, loading, onAsk, onOpenSidebar, onClearChat
                   disabled={loading || !input.trim()}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  aria-label="Send message"
                   className="send-btn flex items-center gap-1.5 rounded-xl px-3 sm:px-4 py-2 text-[13px] font-bold text-white disabled:text-white/20"
                 >
                   <SendIcon />
