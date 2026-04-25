@@ -18,6 +18,7 @@ class Settings(BaseSettings):
 
     gemini_api_key: Optional[str] = Field(default=None, alias="GEMINI_API_KEY")
     openrouter_api_key: Optional[str] = Field(default=None, alias="OPENROUTER_API_KEY")
+    voyage_api_key: Optional[str] = Field(default=None, alias="VOYAGE_API_KEY")
 
     llm_provider: Literal["gemini", "openrouter"] = "gemini"
     llm_model: str = "gemini-2.5-flash"
@@ -30,8 +31,9 @@ class Settings(BaseSettings):
         ),
         alias="OPENROUTER_FREE_MODELS",
     )
-    embeddings_provider: Literal["local", "gemini"] = Field(default="local", alias="EMBEDDINGS_PROVIDER")
+    embeddings_provider: Literal["local", "gemini", "voyageai"] = Field(default="local", alias="EMBEDDINGS_PROVIDER")
     embedding_model: str = Field(default="BAAI/bge-small-en-v1.5", alias="EMBEDDING_MODEL")
+    voyage_embedding_model: str = Field(default="voyage-3-lite", alias="VOYAGE_EMBEDDING_MODEL")
 
     vector_db_path: str = Field(default="./data/chroma", alias="VECTOR_DB_PATH")
     upload_dir: str = Field(default="./data/uploads", alias="UPLOAD_DIR")
@@ -55,6 +57,8 @@ class Settings(BaseSettings):
             self.gemini_api_key = None
         if isinstance(self.openrouter_api_key, str) and not self.openrouter_api_key.strip():
             self.openrouter_api_key = None
+        if isinstance(self.voyage_api_key, str) and not self.voyage_api_key.strip():
+            self.voyage_api_key = None
 
         # Always read the .env file directly as the authoritative source for
         # API keys.  On Windows, uvicorn --reload spawns a child process
@@ -72,10 +76,13 @@ class Settings(BaseSettings):
 
         file_gemini = env_keys.get("GEMINI_API_KEY", "")
         file_openrouter = env_keys.get("OPENROUTER_API_KEY", "")
+        file_voyage = env_keys.get("VOYAGE_API_KEY", "")
         if file_gemini and not self.gemini_api_key:
             self.gemini_api_key = file_gemini
         if file_openrouter and not self.openrouter_api_key:
             self.openrouter_api_key = file_openrouter
+        if file_voyage and not self.voyage_api_key:
+            self.voyage_api_key = file_voyage
 
     def init_storage(self) -> None:
         vector_path = Path(self.vector_db_path)

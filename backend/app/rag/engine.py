@@ -77,7 +77,15 @@ class RagEngine:
                 model="models/gemini-embedding-001",
                 google_api_key=self.settings.gemini_api_key
             )
-        raise ValueError("Invalid EMBEDDINGS_PROVIDER. Use 'local' or 'gemini'.")
+        elif self.settings.embeddings_provider == "voyageai":
+            from langchain_voyageai import VoyageAIEmbeddings
+            if not self.settings.voyage_api_key:
+                raise ValueError("Missing VOYAGE_API_KEY for Voyage AI embeddings")
+            return VoyageAIEmbeddings(
+                model=self.settings.voyage_embedding_model,
+                voyage_api_key=self.settings.voyage_api_key,
+            )
+        raise ValueError("Invalid EMBEDDINGS_PROVIDER. Use 'local', 'gemini', or 'voyageai'.")
 
     def _build_llm(self):
         self._refresh_settings_from_env()
