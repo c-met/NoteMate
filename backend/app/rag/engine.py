@@ -99,6 +99,17 @@ class RagEngine:
                 max_output_tokens=self.settings.llm_max_tokens,
                 timeout=self.settings.llm_timeout_seconds,
             )
+        if self.settings.llm_provider == "groq":
+            if not self.settings.groq_api_key:
+                raise ValueError("Missing GROQ_API_KEY in backend/.env")
+            return ChatOpenAI(
+                model=self.settings.groq_model,
+                api_key=self.settings.groq_api_key,
+                base_url="https://api.groq.com/openai/v1",
+                temperature=0.1,
+                max_tokens=self.settings.llm_max_tokens,
+                timeout=self.settings.llm_timeout_seconds,
+            )
         if self.settings.llm_provider == "openrouter":
             if not self.settings.openrouter_api_key:
                 raise ValueError("Missing OPENROUTER_API_KEY in backend/.env")
@@ -116,7 +127,8 @@ class RagEngine:
                 max_tokens=self.settings.llm_max_tokens,
                 timeout=self.settings.llm_timeout_seconds,
             )
-        raise ValueError("Invalid LLM_PROVIDER. Use 'gemini' or 'openrouter'.")
+        raise ValueError("Invalid LLM_PROVIDER. Use 'gemini', 'groq', or 'openrouter'.")
+
 
     def _ensure_clients(self, require_llm: bool = False) -> None:
         if self.embeddings is None:
