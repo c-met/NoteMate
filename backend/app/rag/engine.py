@@ -85,7 +85,15 @@ class RagEngine:
                 model=self.settings.voyage_embedding_model,
                 voyage_api_key=self.settings.voyage_api_key,
             )
-        raise ValueError("Invalid EMBEDDINGS_PROVIDER. Use 'local', 'gemini', or 'voyageai'.")
+        elif self.settings.embeddings_provider == "nomic":
+            from langchain_nomic import NomicEmbeddings
+            if not self.settings.nomic_api_key:
+                raise ValueError("Missing NOMIC_API_KEY for Nomic AI embeddings")
+            return NomicEmbeddings(
+                model=self.settings.nomic_embedding_model,
+                nomic_api_key=self.settings.nomic_api_key,
+            )
+        raise ValueError("Invalid EMBEDDINGS_PROVIDER. Use 'local', 'gemini', 'voyageai', or 'nomic'.")
 
     def _build_openrouter_llm(self):
         """Build OpenRouter LLM (used as fallback or primary)."""
