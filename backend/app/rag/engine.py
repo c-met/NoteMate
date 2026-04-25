@@ -63,7 +63,15 @@ class RagEngine:
                 threads=1,
                 providers=["CPUExecutionProvider"]
             )
-        raise ValueError("Invalid EMBEDDINGS_PROVIDER. Only 'local' is supported.")
+        elif self.settings.embeddings_provider == "gemini":
+            from langchain_google_genai import GoogleGenerativeAIEmbeddings
+            if not self.settings.gemini_api_key:
+                raise ValueError("Missing GEMINI_API_KEY for Gemini embeddings")
+            return GoogleGenerativeAIEmbeddings(
+                model="models/text-embedding-004",
+                google_api_key=self.settings.gemini_api_key
+            )
+        raise ValueError("Invalid EMBEDDINGS_PROVIDER. Use 'local' or 'gemini'.")
 
     def _build_llm(self):
         self._refresh_settings_from_env()

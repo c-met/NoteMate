@@ -30,7 +30,7 @@ class Settings(BaseSettings):
         ),
         alias="OPENROUTER_FREE_MODELS",
     )
-    embeddings_provider: Literal["local"] = Field(default="local", alias="EMBEDDINGS_PROVIDER")
+    embeddings_provider: Literal["local", "gemini"] = Field(default="local", alias="EMBEDDINGS_PROVIDER")
     embedding_model: str = Field(default="BAAI/bge-small-en-v1.5", alias="EMBEDDING_MODEL")
 
     vector_db_path: str = Field(default="./data/chroma", alias="VECTOR_DB_PATH")
