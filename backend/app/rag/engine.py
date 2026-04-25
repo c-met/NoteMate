@@ -58,7 +58,11 @@ class RagEngine:
     def _build_embeddings(self):
         self._refresh_settings_from_env()
         if self.settings.embeddings_provider == "local":
-            return FastEmbedEmbeddings(model_name="BAAI/bge-small-en-v1.5")
+            return FastEmbedEmbeddings(
+                model_name=self.settings.embedding_model,
+                threads=1,
+                providers=["CPUExecutionProvider"]
+            )
         raise ValueError("Invalid EMBEDDINGS_PROVIDER. Only 'local' is supported.")
 
     def _build_llm(self):
