@@ -68,7 +68,7 @@ class RagEngine:
             if not self.settings.gemini_api_key:
                 raise ValueError("Missing GEMINI_API_KEY for Gemini embeddings")
             return GoogleGenerativeAIEmbeddings(
-                model="models/text-embedding-004",
+                model="models/gemini-embedding-exp-03-07",
                 google_api_key=self.settings.gemini_api_key
             )
         raise ValueError("Invalid EMBEDDINGS_PROVIDER. Use 'local' or 'gemini'.")
