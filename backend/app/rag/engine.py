@@ -87,6 +87,24 @@ class RagEngine:
             )
         raise ValueError("Invalid EMBEDDINGS_PROVIDER. Use 'local', 'gemini', or 'voyageai'.")
 
+    def _build_openrouter_llm(self):
+        """Build OpenRouter LLM (used as fallback or primary)."""
+        if not self.settings.openrouter_api_key:
+            raise ValueError("Missing OPENROUTER_API_KEY in backend/.env")
+        extra_body = None
+        if self.settings.openrouter_model == "openrouter/auto":
+            extra_body = {"models": self.settings.openrouter_free_models}
+        return ChatOpenAI(
+            model=self.settings.openrouter_model,
+            api_key=self.settings.openrouter_api_key,
+            base_url="https://openrouter.ai/api/v1",
+            default_headers={"HTTP-Referer": "http://localhost:5173", "X-Title": "AI PDF Chatbot"},
+            extra_body=extra_body,
+            temperature=0.1,
+            max_tokens=self.settings.llm_max_tokens,
+            timeout=self.settings.llm_timeout_seconds,
+        )
+
     def _build_llm(self):
         self._refresh_settings_from_env()
         if self.settings.llm_provider == "gemini":
@@ -99,24 +117,27 @@ class RagEngine:
                 max_output_tokens=self.settings.llm_max_tokens,
                 timeout=self.settings.llm_timeout_seconds,
             )
-        if self.settings.llm_provider == "openrouter":
-            if not self.settings.openrouter_api_key:
-                raise ValueError("Missing OPENROUTER_API_KEY in backend/.env")
-            extra_body = None
-            if self.settings.openrouter_model == "openrouter/auto":
-                # Keep OpenRouter on auto, but constrain routing to free models.
-                extra_body = {"models": self.settings.openrouter_free_models}
-            return ChatOpenAI(
-                model=self.settings.openrouter_model,
-                api_key=self.settings.openrouter_api_key,
-                base_url="https://openrouter.ai/api/v1",
-                default_headers={"HTTP-Referer": "http://localhost:5173", "X-Title": "AI PDF Chatbot"},
-                extra_body=extra_body,
+        if self.settings.llm_provider == "groq":
+            if not self.settings.groq_api_key:
+                raise ValueError("Missing GROQ_API_KEY in backend/.env")
+            groq_llm = ChatOpenAI(
+                model=self.settings.groq_model,
+                api_key=self.settings.groq_api_key,
+                base_url="https://api.groq.com/openai/v1",
                 temperature=0.1,
                 max_tokens=self.settings.llm_max_tokens,
                 timeout=self.settings.llm_timeout_seconds,
             )
-        raise ValueError("Invalid LLM_PROVIDER. Use 'gemini' or 'openrouter'.")
+            # If Groq fails (rate limit, timeout, etc.), silently fall back to OpenRouter.
+            if self.settings.openrouter_api_key:
+                print("✅ LLM: Groq (primary) → OpenRouter (fallback)")
+                return groq_llm.with_fallbacks([self._build_openrouter_llm()])
+            print("✅ LLM: Groq (primary, no fallback configured)")
+            return groq_llm
+        if self.settings.llm_provider == "openrouter":
+            return self._build_openrouter_llm()
+        raise ValueError("Invalid LLM_PROVIDER. Use 'gemini', 'groq', or 'openrouter'.")
+
 
     def _ensure_clients(self, require_llm: bool = False) -> None:
         if self.embeddings is None:
