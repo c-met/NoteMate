@@ -147,9 +147,9 @@ export function DocumentSidebar({ documents, uploadState, progress, onUpload, on
         </AnimatePresence>
         
         {!isProcessing && (
-          <p className="text-[10px] text-text-muted/60 mt-3 text-center leading-[1.35]">
-            <span className="font-semibold text-text-muted/80">Note:</span> Only typed PDFs are supported.<br />
-            Scanned or handwritten documents will not work.
+          <p className="text-[11px] text-amber-500/80 mt-3.5 text-center leading-[1.4] bg-amber-500/5 py-2 px-3 rounded-xl border border-amber-500/10">
+            <span className="font-semibold text-amber-400">Note:</span> Only typed PDFs are supported.<br />
+            Scanned or handwritten documents will fail.
           </p>
         )}
       </div>
