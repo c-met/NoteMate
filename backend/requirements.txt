@@ -8,9 +8,7 @@ langchain-openai
 langchain-community
 chromadb
 langchain-chroma
-fastembed
 pypdf
 tenacity
 httpx
 orjson
-pytest

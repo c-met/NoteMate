@@ -9,7 +9,6 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -58,6 +57,7 @@ class RagEngine:
     def _build_embeddings(self):
         self._refresh_settings_from_env()
         if self.settings.embeddings_provider == "local":
+            from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
             return FastEmbedEmbeddings(
                 model_name=self.settings.embedding_model,
                 threads=1,
