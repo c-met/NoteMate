@@ -206,12 +206,8 @@ class RagEngine:
         
         chunks = self._chunk_pages(pages, document_id, display_name)
 
-        import time
-        # Gemini free tier: 100 embed requests/min.
-        # Embed 1 chunk per 0.75 s  →  ~80 req/min — permanently safe.
-        for chunk in chunks:
-            self._add_batch_with_retry([chunk])
-            time.sleep(0.75)
+        # Local FastEmbed: no rate limits, embed all chunks in one fast batch.
+        self._add_batch_with_retry(chunks)
                 
         indexed = IndexedDocument(id=document_id, filename=display_name, size_bytes=path.stat().st_size)
         self.documents[document_id] = indexed
