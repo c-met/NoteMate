@@ -188,8 +188,18 @@ class RagEngine:
         pages = self._load_pdf_pages(file_path)
         if not pages:
             raise ValueError("The uploaded PDF has no readable text content.")
+        
         chunks = self._chunk_pages(pages, document_id, display_name)
-        self.vectorstore.add_documents(chunks)
+        
+        # Batch upload to avoid Gemini rate limits (15 RPM free tier)
+        import time
+        batch_size = 30
+        for i in range(0, len(chunks), batch_size):
+            batch = chunks[i : i + batch_size]
+            self.vectorstore.add_documents(batch)
+            if i + batch_size < len(chunks):
+                time.sleep(2)  # 2 second delay between batches
+                
         indexed = IndexedDocument(id=document_id, filename=display_name, size_bytes=path.stat().st_size)
         self.documents[document_id] = indexed
         return indexed

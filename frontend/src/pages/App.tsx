@@ -9,7 +9,7 @@ export function App() {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadState, setUploadState] = useState<"idle" | "uploading" | "parsing" | "success" | "error">("idle");
   const [progress, setProgress] = useState(0);
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [clearingChat, setClearingChat] = useState(false);
@@ -54,15 +54,30 @@ export function App() {
       alert("Only PDF files are allowed.");
       return;
     }
-    setUploading(true);
+    setUploadState("uploading");
     setProgress(0);
     try {
-      await uploadPdfs(files, setProgress);
+      await uploadPdfs(files, (pct) => {
+        setProgress(pct);
+        if (pct === 100) {
+          setUploadState("parsing");
+        }
+      });
       await refreshDocuments();
-    } catch {
-      alert("Upload failed. Please try again.");
-    } finally {
-      setUploading(false);
+      setUploadState("success");
+      setTimeout(() => setUploadState("idle"), 2500);
+    } catch (err: any) {
+      console.error("Upload Error:", err?.response?.data || err.message || err);
+      const detail =
+        axios.isAxiosError(err) && err.response?.data
+          ? typeof err.response.data === "string"
+            ? err.response.data
+            : (err.response.data as { detail?: string }).detail || JSON.stringify(err.response.data)
+          : err.message || "Unknown error";
+      
+      alert(`Upload Failed: ${detail}\n\nCheck the browser console for more details.`);
+      setUploadState("error");
+      setTimeout(() => setUploadState("idle"), 4000);
     }
   }
 
@@ -121,7 +136,7 @@ export function App() {
       {/* Fixed floating sidebar */}
       <DocumentSidebar
         documents={documents}
-        uploading={uploading}
+        uploadState={uploadState}
         progress={progress}
         onUpload={handleUpload}
         onDelete={handleDelete}

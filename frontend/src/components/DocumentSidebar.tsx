@@ -4,7 +4,7 @@ import { GlassCard } from "./GlassCard";
 
 interface Props {
   documents: DocumentItem[];
-  uploading: boolean;
+  uploadState: "idle" | "uploading" | "parsing" | "success" | "error";
   progress: number;
   onUpload: (files: File[]) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -12,8 +12,9 @@ interface Props {
   setIsMobileOpen: (val: boolean) => void;
 }
 
-export function DocumentSidebar({ documents, uploading, progress, onUpload, onDelete, isMobileOpen, setIsMobileOpen }: Props) {
+export function DocumentSidebar({ documents, uploadState, progress, onUpload, onDelete, isMobileOpen, setIsMobileOpen }: Props) {
   const uploadId = "pdf-upload-input";
+  const isProcessing = uploadState === "uploading" || uploadState === "parsing";
 
   const formatDate = (isoDate: string) =>
     new Date(isoDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
@@ -47,23 +48,64 @@ export function DocumentSidebar({ documents, uploading, progress, onUpload, onDe
       <div className="px-4 pt-4">
         <label
           htmlFor={uploadId}
-          className={`btn-primary flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-[13px] font-bold cursor-pointer ${
-            documents.length === 0 && !uploading ? "upload-btn-idle" : ""
-          }`}
+          className={`relative overflow-hidden flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-[13px] font-bold transition-all duration-300 ${
+            uploadState === "idle" || isProcessing ? "btn-primary text-[#001a14]" : ""
+          } ${isProcessing ? "opacity-80 cursor-not-allowed" : "cursor-pointer"} ${
+            uploadState === "success" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : ""
+          } ${
+            uploadState === "error" ? "bg-rose-500/10 text-rose-400 border border-rose-500/30" : ""
+          } ${documents.length === 0 && uploadState === "idle" ? "upload-btn-idle" : ""}`}
         >
-          <motion.div
-            animate={uploading ? { rotate: 360 } : { rotate: 0 }}
-            transition={uploading ? { duration: 1.2, repeat: Infinity, ease: "linear" } : {}}
-          >
-            <UploadIcon />
-          </motion.div>
-          {uploading ? "Uploading…" : "Upload PDF Notes"}
+          {isProcessing && (
+            <div 
+              className="absolute left-0 top-0 bottom-0 bg-white/20 transition-all duration-300 ease-out" 
+              style={{ width: `${uploadState === "parsing" ? 100 : progress}%` }} 
+            />
+          )}
+
+          <span className="relative z-10 flex items-center gap-2">
+            {uploadState === "idle" && (
+              <>
+                <UploadIcon />
+                Upload PDF Notes
+              </>
+            )}
+            {uploadState === "uploading" && (
+              <>
+                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}>
+                  <SpinnerIcon />
+                </motion.div>
+                Uploading PDF...
+              </>
+            )}
+            {uploadState === "parsing" && (
+              <>
+                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}>
+                  <PulseIcon />
+                </motion.div>
+                Parsing document...
+              </>
+            )}
+            {uploadState === "success" && (
+              <>
+                <CheckIcon />
+                Ready to chat!
+              </>
+            )}
+            {uploadState === "error" && (
+              <>
+                <AlertIcon />
+                Upload failed
+              </>
+            )}
+          </span>
           <input
             id={uploadId}
             type="file"
             multiple
             accept="application/pdf"
             className="hidden"
+            disabled={isProcessing}
             onChange={(e) => {
               const files = Array.from(e.target.files ?? []);
               if (files.length) void onUpload(files);
@@ -73,25 +115,29 @@ export function DocumentSidebar({ documents, uploading, progress, onUpload, onDe
         </label>
 
         <AnimatePresence>
-          {uploading && (
+          {isProcessing && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               className="mt-3 overflow-hidden"
             >
-              <div className="flex justify-between mb-1.5">
-                <span className="text-[11px] text-text-muted">Uploading...</span>
-                <span className="text-[11px] font-semibold text-primary">{progress}%</span>
+              <div className="flex justify-between mb-1.5 px-0.5">
+                <span className="text-[11px] text-text-muted">
+                  {uploadState === "uploading" ? "Sending to server..." : "Extracting text & vectors..."}
+                </span>
+                {uploadState === "uploading" && (
+                  <span className="text-[11px] font-semibold text-primary">{progress}%</span>
+                )}
               </div>
               <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
                 <motion.div
                   className="h-full rounded-full"
                   style={{
-                    width: `${progress}%`,
+                    width: uploadState === "parsing" ? "100%" : `${progress}%`,
                     background: "linear-gradient(90deg, #0D9488, #14B8A6, #2DD4BF)",
                     backgroundSize: "200% 100%",
-                    animation: "shimmer-line 1.5s linear infinite",
+                    animation: uploadState === "parsing" ? "shimmer-line 1.5s linear infinite" : "none",
                   }}
                   transition={{ duration: 0.3 }}
                 />
@@ -292,6 +338,38 @@ function EmptyIcon() {
       />
       <path d="M14 4V10H20" stroke="currentColor" strokeWidth="1.4" />
       <path d="M8 14H16M8 17H13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function SpinnerIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="opacity-75">
+      <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
+    </svg>
+  );
+}
+
+function PulseIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function AlertIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
