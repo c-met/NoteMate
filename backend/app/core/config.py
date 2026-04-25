@@ -18,9 +18,7 @@ class Settings(BaseSettings):
 
     gemini_api_key: Optional[str] = Field(default=None, alias="GEMINI_API_KEY")
     openrouter_api_key: Optional[str] = Field(default=None, alias="OPENROUTER_API_KEY")
-    voyage_api_key: Optional[str] = Field(default=None, alias="VOYAGE_API_KEY")
     groq_api_key: Optional[str] = Field(default=None, alias="GROQ_API_KEY")
-    nomic_api_key: Optional[str] = Field(default=None, alias="NOMIC_API_KEY")
 
     llm_provider: Literal["gemini", "openrouter", "groq"] = "openrouter"
     llm_model: str = "gemini-2.5-flash"
@@ -34,10 +32,8 @@ class Settings(BaseSettings):
         ),
         alias="OPENROUTER_FREE_MODELS",
     )
-    embeddings_provider: Literal["local", "gemini", "voyageai", "nomic"] = Field(default="local", alias="EMBEDDINGS_PROVIDER")
+    embeddings_provider: Literal["local", "gemini"] = Field(default="local", alias="EMBEDDINGS_PROVIDER")
     embedding_model: str = Field(default="BAAI/bge-small-en-v1.5", alias="EMBEDDING_MODEL")
-    voyage_embedding_model: str = Field(default="voyage-3-lite", alias="VOYAGE_EMBEDDING_MODEL")
-    nomic_embedding_model: str = Field(default="nomic-embed-text-v1.5", alias="NOMIC_EMBEDDING_MODEL")
 
     vector_db_path: str = Field(default="./data/chroma", alias="VECTOR_DB_PATH")
     upload_dir: str = Field(default="./data/uploads", alias="UPLOAD_DIR")
@@ -56,17 +52,12 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=str(ENV_FILE), env_file_encoding="utf-8", extra="ignore")
 
     def model_post_init(self, __context) -> None:
-        # Normalize empty strings to None so downstream checks work reliably.
         if isinstance(self.gemini_api_key, str) and not self.gemini_api_key.strip():
             self.gemini_api_key = None
         if isinstance(self.openrouter_api_key, str) and not self.openrouter_api_key.strip():
             self.openrouter_api_key = None
-        if isinstance(self.voyage_api_key, str) and not self.voyage_api_key.strip():
-            self.voyage_api_key = None
         if isinstance(self.groq_api_key, str) and not self.groq_api_key.strip():
             self.groq_api_key = None
-        if isinstance(self.nomic_api_key, str) and not self.nomic_api_key.strip():
-            self.nomic_api_key = None
 
         # Always read the .env file directly as the authoritative source for
         # API keys.  On Windows, uvicorn --reload spawns a child process
@@ -84,19 +75,13 @@ class Settings(BaseSettings):
 
         file_gemini = env_keys.get("GEMINI_API_KEY", "")
         file_openrouter = env_keys.get("OPENROUTER_API_KEY", "")
-        file_voyage = env_keys.get("VOYAGE_API_KEY", "")
         file_groq = env_keys.get("GROQ_API_KEY", "")
-        file_nomic = env_keys.get("NOMIC_API_KEY", "")
         if file_gemini and not self.gemini_api_key:
             self.gemini_api_key = file_gemini
         if file_openrouter and not self.openrouter_api_key:
             self.openrouter_api_key = file_openrouter
-        if file_voyage and not self.voyage_api_key:
-            self.voyage_api_key = file_voyage
         if file_groq and not self.groq_api_key:
             self.groq_api_key = file_groq
-        if file_nomic and not self.nomic_api_key:
-            self.nomic_api_key = file_nomic
 
     def init_storage(self) -> None:
         vector_path = Path(self.vector_db_path)

@@ -145,6 +145,13 @@ export function DocumentSidebar({ documents, uploadState, progress, onUpload, on
             </motion.div>
           )}
         </AnimatePresence>
+        
+        {!isProcessing && (
+          <p className="text-[10px] text-text-muted/60 mt-3 text-center leading-[1.35]">
+            <span className="font-semibold text-text-muted/80">Note:</span> Only typed PDFs are supported.<br />
+            Scanned or handwritten documents will not work.
+          </p>
+        )}
       </div>
 
       <div className="flex items-center justify-between px-4 mt-6 mb-2.5">
