@@ -19,11 +19,9 @@ class Settings(BaseSettings):
     gemini_api_key: Optional[str] = Field(default=None, alias="GEMINI_API_KEY")
     openrouter_api_key: Optional[str] = Field(default=None, alias="OPENROUTER_API_KEY")
     voyage_api_key: Optional[str] = Field(default=None, alias="VOYAGE_API_KEY")
-    groq_api_key: Optional[str] = Field(default=None, alias="GROQ_API_KEY")
 
-    llm_provider: Literal["gemini", "openrouter", "groq"] = "gemini"
+    llm_provider: Literal["gemini", "openrouter"] = "gemini"
     llm_model: str = "gemini-2.5-flash"
-    groq_model: str = Field(default="llama-3.1-8b-instant", alias="GROQ_MODEL")
     openrouter_model: str = Field(default="openrouter/auto", alias="OPENROUTER_MODEL")
     openrouter_free_models_raw: str = Field(
         default=(
@@ -46,7 +44,7 @@ class Settings(BaseSettings):
     max_context_chars: int = 6000
     max_history_chars: int = 900
     memory_window: int = 4
-    llm_max_tokens: int = 1500
+    llm_max_tokens: int = 4096
     llm_timeout_seconds: int = 60
     ultra_fast_mode: bool = Field(default=False, alias="ULTRA_FAST_MODE")
     max_answer_chars: int = Field(default=2000, alias="MAX_ANSWER_CHARS")
@@ -61,8 +59,6 @@ class Settings(BaseSettings):
             self.openrouter_api_key = None
         if isinstance(self.voyage_api_key, str) and not self.voyage_api_key.strip():
             self.voyage_api_key = None
-        if isinstance(self.groq_api_key, str) and not self.groq_api_key.strip():
-            self.groq_api_key = None
 
         # Always read the .env file directly as the authoritative source for
         # API keys.  On Windows, uvicorn --reload spawns a child process
@@ -81,15 +77,12 @@ class Settings(BaseSettings):
         file_gemini = env_keys.get("GEMINI_API_KEY", "")
         file_openrouter = env_keys.get("OPENROUTER_API_KEY", "")
         file_voyage = env_keys.get("VOYAGE_API_KEY", "")
-        file_groq = env_keys.get("GROQ_API_KEY", "")
         if file_gemini and not self.gemini_api_key:
             self.gemini_api_key = file_gemini
         if file_openrouter and not self.openrouter_api_key:
             self.openrouter_api_key = file_openrouter
         if file_voyage and not self.voyage_api_key:
             self.voyage_api_key = file_voyage
-        if file_groq and not self.groq_api_key:
-            self.groq_api_key = file_groq
 
     def init_storage(self) -> None:
         vector_path = Path(self.vector_db_path)
@@ -105,8 +98,6 @@ class Settings(BaseSettings):
             raise ValueError("Missing GEMINI_API_KEY in backend/.env")
         if self.llm_provider == "openrouter" and not self.openrouter_api_key:
             raise ValueError("Missing OPENROUTER_API_KEY in backend/.env")
-        if self.llm_provider == "groq" and not self.groq_api_key:
-            raise ValueError("Missing GROQ_API_KEY in backend/.env")
 
     @property
     def openrouter_free_models(self) -> list[str]:
