@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     app_name: str = "AI PDF Chatbot API"
     app_env: Literal["development", "production", "test"] = "development"
     api_prefix: str = "/api/v1"
-    max_upload_size_mb: int = 25
+    max_upload_size_mb: int = 3
     allowed_file_extensions: tuple[str, ...] = (".pdf",)
 
     gemini_api_key: Optional[str] = Field(default=None, alias="GEMINI_API_KEY")

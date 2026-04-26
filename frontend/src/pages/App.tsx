@@ -54,6 +54,11 @@ export function App() {
       alert("Only PDF files are allowed.");
       return;
     }
+    const tooLarge = files.find((f) => f.size > 3 * 1024 * 1024);
+    if (tooLarge) {
+      alert("Please upload a PDF smaller than 3MB.");
+      return;
+    }
     setUploadState("uploading");
     setProgress(0);
     try {
